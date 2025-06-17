@@ -1,0 +1,7 @@
+aiogram
+google-api-python-client
+google-generativeai
+grpcio
+requests
+markdown2
+yt_dlp
