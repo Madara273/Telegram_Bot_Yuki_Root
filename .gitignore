@@ -1,3 +1,4 @@
 config.py
+yuki_chat_history.db
 yuki/
 __pycache__/
