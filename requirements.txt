@@ -1,7 +1,9 @@
 aiogram
 google-api-python-client
 google-generativeai
+aiosqlite
 grpcio
 requests
 markdown2
 yt_dlp
+telegramify-markdown[mermaid]
