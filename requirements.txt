@@ -1,6 +1,7 @@
 aiogram
 google-api-python-client
 google-generativeai
+aiosqlite
 grpcio
 requests
 markdown2
