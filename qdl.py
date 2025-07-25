@@ -22,6 +22,7 @@ from aiogram.types import (
 	FSInputFile
 )
 
+from aiogram.exceptions import TelegramBadRequest
 from yt_dlp.utils import DownloadError
 import yt_dlp
 
@@ -99,7 +100,10 @@ def safe_extract_info(url):
 async def cmd_qdl(message: Message, bot: Bot):
 	parts = message.text.strip().split(maxsplit=1)
 	uid = message.from_user.id
-	await message.delete()
+	try:
+		await message.delete()
+	except TelegramBadRequest:
+		logging.warning(f"Не вдалося видалити повідомлення від {message.from_user.id}")
 
 	if len(parts) != 2:
 		warn_msg = await message.answer(
