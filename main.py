@@ -72,7 +72,14 @@ async def cmd_start(message: Message):
 		"• /ping — перевірити зв'язок\n\n"
 		"✅ Завжди актуальні версії!"
 	)
-	await message.answer(text, parse_mode="HTML")
+
+	try:
+		await message.answer(text, parse_mode="HTML")
+	except TelegramBadRequest as e:
+		if "not enough rights to send text messages" in str(e):
+			logger.warning("Ой, здається, я не маю прав писати в цей чат, звернись до адміна")
+	except Exception:
+		pass
 
 # --- Обробка команди Ping ---
 @main_router.message(Command("ping"))
