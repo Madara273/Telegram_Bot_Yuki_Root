@@ -221,7 +221,22 @@ async def get_gemini_response(user_id: int, text: str) -> str:
 			else:
 				return "Вибач, я не змогла згенерувати відповідь. Спробуй ще раз."
 	except Exception as e:
-		logger.error(f"Помилка при отриманні відповіді від AI для користувача %d (роль '%s'): %s", user_id, desired_role, e)
+		tab_error_str = str(e)
+		if "SERVICE_DISABLED" in tab_error_str or "generativelanguage.googleapis.com" in tab_error_str:
+			logger.warning(
+				"Generative Language API не активована або не використовувалась для проєкту. UID=%d, роль=%s",
+				user_id, desired_role
+			)
+			return (
+				"🌸 *Yuki* трохи розгублена...\n"
+				"Схоже, *Generative Language API* ще не активовано для цього проєкту 😥\n\n"
+				"🔁 Або це тимчасовий збій API.\n"
+				"Не хвилюйся, спробуй ще раз за мить 💖"
+			)
+		logger.error(
+			"Помилка при отриманні відповіді від AI для користувача %d (роль '%s'): %s",
+			user_id, desired_role, e, exc_info=True
+		)
 		return "Вибач, виникла помилка під час обробки твого запиту. Спробуй ще раз пізніше."
 
 # --- Роутер для Gemini-функціоналу ---
