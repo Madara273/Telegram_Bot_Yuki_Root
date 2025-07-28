@@ -19,7 +19,6 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramNetworkError, RestartingTelegram
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 
-from nsfw_w import nsfw_detect_router
 from magic import magic_router
 from waifu import waifu_router
 from ai_router import yuki_router, init_db, DB_NAME
@@ -36,7 +35,6 @@ bot = Bot(
 dp = Dispatcher(storage=MemoryStorage())
 main_router = Router()
 
-dp.include_router(nsfw_detect_router)
 dp.include_router(main_router)
 dp.include_router(magic_router)
 dp.include_router(qdl_router)
