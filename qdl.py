@@ -10,6 +10,7 @@ import asyncio
 import logging
 import traceback
 import urllib.parse
+import shutil
 
 from aiogram import Router
 from aiogram import Bot
@@ -25,6 +26,10 @@ from aiogram.types import (
 from aiogram.exceptions import TelegramBadRequest
 from yt_dlp.utils import DownloadError
 import yt_dlp
+
+# --- Захист від відсутнтого інструиенту ffmpeg ---
+def check_ffmpeg_installed() -> bool:
+	return shutil.which("ffmpeg") is not None and shutil.which("ffprobe") is not None
 
 # --- Ініціалізація ---
 qdl_router = Router()
@@ -145,6 +150,16 @@ async def cmd_qdl(message: Message, bot: Bot):
 # --- Обробка callback кнопок формату ---
 @qdl_router.callback_query(lambda c: c.data and c.data.startswith("qdl_"))
 async def process_qdl_callback(query: CallbackQuery, bot: Bot):
+	if not check_ffmpeg_installed():
+		await query.message.answer(
+			"❗️ <b>Увага!</b> Не знайдено ffmpeg або ffprobe у системі.\n"
+			"Для завантаження відео/аудіо ці інструменти обов’язкові.\n"
+			"Встанови їх, будь ласка, командою:\n"
+			"<code>sudo apt install ffmpeg</code>"
+		)
+		await query.answer()
+		return
+
 	uid = query.from_user.id
 	data = query.data
 	action, query_id = data.split("|", maxsplit=1)
@@ -240,14 +255,23 @@ async def process_qdl_callback(query: CallbackQuery, bot: Bot):
 			await status_msg.delete()
 
 	except yt_dlp.utils.DownloadError as e:
-		error_text = str(e)
+		error_text = str(e).lower()
 		logging.error(f"Yt-dlp DownloadError: {error_text}", exc_info=True)
-		if "Unsupported URL" in error_text:
+
+		if "unsupported url" in error_text:
 			await status_msg.edit_text("⚠️ Це посилання не підтримується (можливо, фото/сторіс, прямий ефір, або приватний контент).")
-		elif "ERROR: Private video" in error_text:
+		elif "error: private video" in error_text:
 			await status_msg.edit_text("⚠️ Це приватне відео і його неможливо завантажити.")
-		elif "ERROR: This video is unavailable" in error_text:
+		elif "error: this video is unavailable" in error_text:
 			await status_msg.edit_text("⚠️ Це відео недоступне.")
+		elif "ffmpeg" in error_text or "ffprobe" in error_text:
+			await status_msg.edit_text(
+				"❗️ Помилка: не знайдено ffmpeg або ffprobe.\n"
+				"Для обробки відео потрібні ці інструменти.\n"
+				"Встанови їх командою:\n"
+				"`sudo apt install ffmpeg`\n"
+				"або додай їх до PATH."
+			)
 		else:
 			await status_msg.edit_text("⚠️ Помилка завантаження. Спробуй інше посилання або пізніше.")
 		await asyncio.sleep(5)
