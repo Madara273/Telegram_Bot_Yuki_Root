@@ -23,6 +23,7 @@ from magic import magic_router
 from waifu import waifu_router
 from ai_router import yuki_router, init_db, DB_NAME
 from qdl import qdl_router
+from gen_router import gen_router
 
 # --- Імпортувати з config ---
 BOT_TOKEN = config.BOT_TOKEN
@@ -35,6 +36,7 @@ bot = Bot(
 dp = Dispatcher(storage=MemoryStorage())
 main_router = Router()
 
+dp.include_router(gen_router)
 dp.include_router(main_router)
 dp.include_router(magic_router)
 dp.include_router(qdl_router)
@@ -65,6 +67,7 @@ async def cmd_start(message: Message):
 		"🤖 <b>AI-помічник:</b>\n"
 		"• /get_yuki — Yuki-асистент\n"
 		"• /reset_yuki - Скинути історію чату\n"
+		"• /gen - Генерувати зображення\n"
 		"• /sleep — завершити сесію Yuki\n\n"
 		"📽 <b>Медіа:</b>\n"
 		"• /qdl — завантаження з YouTube, TikTok\n\n"
