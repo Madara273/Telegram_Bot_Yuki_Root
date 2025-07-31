@@ -18,6 +18,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramNetworkError, RestartingTelegram
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
+from aiogram.types import BufferedInputFile, InputMediaPhoto
+from aiogram.enums.parse_mode import ParseMode
 
 from magic import magic_router
 from waifu import waifu_router
@@ -50,7 +52,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# --- Підтримувані команди ---
+# --- Завантаження банера ---
+with open("banner/yuki_banner.png", "rb") as image_file:
+	banner = BufferedInputFile(image_file.read(), filename="yuki_banner.png")
+
+# --- Обробник /start ---
 @main_router.message(Command("start"))
 async def cmd_start(message: Message):
 	try:
@@ -59,30 +65,42 @@ async def cmd_start(message: Message):
 		logger.debug(f"Не вдалося видалити /start від {message.from_user.id}: {e}")
 
 	text = (
-		"👋 <b>Привіт! Я — Yuki, твій помічник у світі root-інструментів, AI та завантажень</b>\n\n"
-		"🛠 <b>Yuki-інструменти:</b>\n"
-		"• /magisk — остання версія Magisk\n"
-		"• /ksu_next — KernelSU-Next\n"
-		"• /modules — Magisk-модулі\n\n"
-		"🤖 <b>AI-помічник:</b>\n"
-		"• /get_yuki — Yuki-асистент\n"
+		"🔧 <b>Yuki-інструменти:</b>\n"
+		"• /magisk - Остання версія Magisk\n"
+		"• /ksu_next - KernelSU-Next\n"
+		"• /modules - Magisk-модулі\n\n"
+		"🪄 <b>Yuki-помічник:</b>\n"
+		"• /get_yuki - Yuki-асистент\n"
 		"• /reset_yuki - Скинути історію чату\n"
 		"• /gen - Генерувати зображення\n"
-		"• /sleep — завершити сесію Yuki\n\n"
-		"📽 <b>Медіа:</b>\n"
-		"• /qdl — завантаження з YouTube, TikTok\n\n"
-		"📡 <b>Стан:</b>\n"
-		"• /ping — перевірити зв'язок\n\n"
+		"• /sleep - Завершити сесію Yuki\n\n"
+		"🎞️ <b>Yuki-медіа:</b>\n"
+		"• /qdl - Завантаження з YouTube, TikTok\n\n"
+		"📡 <b>Yuki-стан:</b>\n"
+		"• /ping - перевірити зв'язок\n\n"
 		"✅ Завжди актуальні версії!"
 	)
 
 	try:
-		await message.answer(text, parse_mode="HTML")
+		await message.answer_photo(
+			photo=banner,
+			caption=text,
+			parse_mode=ParseMode.HTML
+		)
 	except TelegramBadRequest as e:
-		if "not enough rights to send text messages" in str(e):
-			logger.warning("Ой, здається, я не маю прав писати в цей чат, звернись до адміна")
-	except Exception:
-		pass
+		if "not enough rights" in str(e):
+			logger.warning("Боту не вистачає прав для відправки медіа!")
+	except Exception as e:
+		logger.error(f"Помилка відправки банера: {e}")
+
+		try:
+			await message.answer(text, parse_mode=ParseMode.HTML)
+		except TelegramBadRequest as e:
+			if "not enough rights to send text messages" in str(e):
+				logger.warning("Ой, здається, я не маю прав писати в цей чат, звернись до адміна")
+		except Exception as ex:
+			logger.error(f"Невідома помилка при резервній відправці тексту: {ex}")
+
 
 # --- Обробка команди Ping ---
 @main_router.message(Command("ping"))
