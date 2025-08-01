@@ -101,7 +101,6 @@ async def cmd_start(message: Message):
 		except Exception as ex:
 			logger.error(f"Невідома помилка при резервній відправці тексту: {ex}")
 
-
 # --- Обробка команди Ping ---
 @main_router.message(Command("ping"))
 async def ping_handler(message: Message):
@@ -133,6 +132,10 @@ async def ping_handler(message: Message):
 		parse_mode="HTML"
 	)
 
+# --- AIOHTTP TCP/NAT/BBR оптимізована сесія ---
+connector: aiohttp.TCPConnector | None = None
+session: aiohttp.ClientSession | None = None
+
 # --- Реалізувати захист від нестабільних мереж ---
 async def run_polling():
 	logger.info(f"Спроба ініціалізації бази даних: {DB_NAME}")
@@ -141,15 +144,17 @@ async def run_polling():
 		logger.info("База даних ініціалізована/перевірена успішно.")
 	except Exception as e:
 		logger.critical(f"КРИТИЧНА ПОМИЛКА: Не вдалося ініціалізувати базу даних. Бот не зможе працювати без неї. Деталі: {e}")
-
 		return
 
 	while True:
 		try:
-			logger.info("🚀 Запуск бота…")
+			logger.info("Запуск бота…")
 			await dp.start_polling(bot)
-			logger.info("✅ Polling завершено без помилок.")
+			logger.info("Polling завершено без помилок.")
 			break
+		except aiohttp.ServerDisconnectedError as disconn:
+			logger.warning(f"[Мережа] Сервер Telegram розірвав з’єднання: {disconn}. Повтор через 10 сек...")
+			await asyncio.sleep(10)
 		except (aiohttp.ClientConnectorError, TelegramNetworkError, asyncio.TimeoutError) as net_err:
 			logger.warning(f"[Мережа] Втрачено з'єднання: {net_err}. Повтор через 10 сек...")
 			await asyncio.sleep(10)
@@ -157,39 +162,63 @@ async def run_polling():
 			logger.info(f"[Telegram] Перезапуск: {restart}")
 			await asyncio.sleep(5)
 		except asyncio.CancelledError:
-			logger.info("🛑 Отримано сигнал скасування. Завершуємо polling.")
+			logger.info("Отримано сигнал скасування. Завершуємо polling.")
 			break
 		except Exception as e:
 			logger.exception(f"[Фатальна помилка] {e}")
 			await asyncio.sleep(5)
 
 # --- Реалізувати правильне завершення роботи ---
-async def shutdown(loop, polling_task):
-	logger.info("🛑 Завершення: зупинити polling…")
+async def shutdown(polling_task):
+	logger.info("Завершення: зупинити polling…")
 	polling_task.cancel()
 	with contextlib.suppress(asyncio.CancelledError):
 		await polling_task
-	await bot.session.close()
-	logger.info("✅ Сесію бота закрито.")
-	loop.stop()
-	logger.info("✅ Завершено коректно.")
+
+	if session and not session.closed:
+		await session.close()
+		logger.info("Сесію aiohttp закрито.")
+
+	if connector and not connector.closed:
+		connector.close()
+		logger.info("Конектор aiohttp закрито.")
+
+	try:
+		await bot.session.close()
+		logger.info("Сесію бота закрито.")
+	except Exception as e:
+		logger.warning(f"⚠ Не вдалося закрити сесію бота: {e}")
+
+	logger.info("Завершено коректно.")
 
 # --- Запуск і обробка сигналів завершення ---
 async def main():
-	loop = asyncio.get_running_loop()
+	global connector, session
 
+	# --- AIOHTTP TCP/NAT/BBR оптимізована сесія (ініціалізація) ---
+	connector = aiohttp.TCPConnector(
+		limit=100,
+		ttl_dns_cache=600,
+		force_close=False,
+		keepalive_timeout=30
+	)
+	session = aiohttp.ClientSession(connector=connector)
+
+	loop = asyncio.get_running_loop()
 	polling_task = asyncio.create_task(run_polling())
 
 	for sig in (signal.SIGINT, signal.SIGTERM):
-		loop.add_signal_handler(sig, lambda s=sig: asyncio.create_task(shutdown(loop, polling_task)))
+		loop.add_signal_handler(sig, lambda s=sig: asyncio.create_task(shutdown(polling_task)))
 
 	try:
 		await polling_task
-	except asyncio.CancelledError:
-		pass
+	finally:
+		if not polling_task.cancelled():
+			await shutdown(polling_task)
+
 
 if __name__ == "__main__":
 	try:
 		asyncio.run(main())
 	except KeyboardInterrupt:
-		logger.info("⛔️ KeyboardInterrupt — вихід.")
+		logger.info("KeyboardInterrupt — вихід.")
