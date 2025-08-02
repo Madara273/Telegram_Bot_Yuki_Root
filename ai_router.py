@@ -295,7 +295,7 @@ async def get_gemini_handler(message: Message):
 	if user_id not in active_users:
 		active_users.add(user_id)
 		logger.info(f"Користувач %d активував сесію Gemini.", user_id)
-		await message.answer("✅ Привіт! Я готова допомогти. Я твоя Юкі. Запитай мене.")
+		await message.answer("✔️ Привіт! Я готова допомогти. Я твоя Юкі. Запитай мене.")
 	else:
 		await message.answer("💡 Я вже активна. Просто продовжуй писати.")
 
@@ -314,7 +314,7 @@ async def sleep_gemini_handler(message: Message):
 		reply = await message.answer("📴 Сесію Yuki завершено. Щоб увімкнути знову — надішли /get_yuki.")
 		await delete_message_after_delay(reply)
 	else:
-		reply = await message.answer("❌ Сесія Yuki не активна. Надішли /get_yuki, щоб почати.")
+		reply = await message.answer("✖️ Сесія Yuki не активна. Надішли /get_yuki, щоб почати.")
 		await delete_message_after_delay(reply)
 
 # --- Скидання історії Юкі ---
@@ -328,7 +328,7 @@ async def reset_gemini_handler(message: Message):
 
 	await delete_user_history_from_db(user_id)
 	logger.info(f"Історія для користувача %d була скинута командою /reset_yuki.", user_id)
-	reply = await message.answer("✅ Історію Юкі для тебе скинуто. Вона розпочне діалог знову відповідно до твоєї поточної ролі (Тензо/звичайний користувач).")
+	reply = await message.answer("✔️ Історію Юкі для тебе скинуто. Вона розпочне діалог знову відповідно до твоєї поточної ролі (Тензо/звичайний користувач).")
 	await delete_message_after_delay(reply)
 
 # --- Асинхронний обробник ---

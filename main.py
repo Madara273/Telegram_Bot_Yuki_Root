@@ -117,12 +117,12 @@ async def ping_handler(message: Message):
 	start = time.perf_counter()
 
 	try:
-		sent_msg = await message.answer("🏓 Перевіряю зв'язок…")
+		sent_msg = await message.answer("☕ Перевіряю зв'язок…")
 	except TelegramRetryAfter as e:
 		retry_after = e.retry_after or 10
 		logger.warning(f"Flood control 🫣 — чекаю {retry_after} сек...")
 		await asyncio.sleep(retry_after)
-		sent_msg = await message.answer("🏓 Повторна спроба після flood control…")
+		sent_msg = await message.answer("☕ Повторна спроба після flood control…")
 
 	end = time.perf_counter()
 	ping_ms = round((end - start) * 1000, 2)

@@ -54,11 +54,11 @@ async def gen_help(message: Message):
 	await safe_delete(message, "Команда користувача (/gen) миттєве видалення", message.from_user.id)
 
 	msg = await message.answer(
-		"*Генерація зображення*\n\n"
+		"*➟ Генерація зображення*\n"
 		"Вкажи опис картинки після команди.\n"
 		"Наприклад:\n"
-		"`/gen красива аніме дівчина`\n\n"
-		"І намалюю для тебе зображення за цим описом!",
+		"`/gen красива аніме дівчина`\n"
+		"І я намалюю для тебе зображення за цим описом!",
 		parse_mode="Markdown"
 	)
 	await asyncio.sleep(5)

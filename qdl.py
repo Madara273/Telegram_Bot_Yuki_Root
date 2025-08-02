@@ -112,7 +112,7 @@ async def cmd_qdl(message: Message, bot: Bot):
 
 	if len(parts) != 2:
 		warn_msg = await message.answer(
-			"ℹ️    Вкажи посилання або пошуковий запит після команди. Наприклад:\n"
+			"🔍Вкажи посилання або пошуковий запит після команди. Наприклад:\n"
 			"`/qdl https://tiktok.com/...` або `/qdl never gonna give you up`",
 			parse_mode="Markdown"
 		)
@@ -152,7 +152,7 @@ async def cmd_qdl(message: Message, bot: Bot):
 async def process_qdl_callback(query: CallbackQuery, bot: Bot):
 	if not check_ffmpeg_installed():
 		await query.message.answer(
-			"❗️ <b>Увага!</b> Не знайдено ffmpeg або ffprobe у системі.\n"
+			"✖️ <b>Увага!</b> Не знайдено ffmpeg або ffprobe у системі.\n"
 			"Для завантаження відео/аудіо ці інструменти обов’язкові.\n"
 			"Встанови їх, будь ласка, командою:\n"
 			"<code>sudo apt install ffmpeg</code>"
@@ -266,7 +266,7 @@ async def process_qdl_callback(query: CallbackQuery, bot: Bot):
 			await status_msg.edit_text("⚠️ Це відео недоступне.")
 		elif "ffmpeg" in error_text or "ffprobe" in error_text:
 			await status_msg.edit_text(
-				"❗️ Помилка: не знайдено ffmpeg або ffprobe.\n"
+				"✖️ Помилка: не знайдено ffmpeg або ffprobe.\n"
 				"Для обробки відео потрібні ці інструменти.\n"
 				"Встанови їх командою:\n"
 				"`sudo apt install ffmpeg`\n"
