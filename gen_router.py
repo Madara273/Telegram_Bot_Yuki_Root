@@ -13,6 +13,7 @@ from aiogram import Router, F
 from aiogram.types import Message, BufferedInputFile
 from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError
 
+from math import ceil
 from google import genai
 from google.genai import types
 
@@ -85,7 +86,8 @@ async def generate_image(message: Message):
 	if len(user_limits[user_id]) >= MAX_GENERATIONS:
 		time_left = TIME_LIMIT_MINUTES
 		if user_limits[user_id]:
-			time_left = max(0, (user_limits[user_id][0] + TIME_LIMIT - now).seconds // 60)
+			# Округлення часу вгору, щоб не показувало 0 при залишку < 1 хв
+			time_left = max(0, ceil((user_limits[user_id][0] + TIME_LIMIT - now).total_seconds() / 60))
 
 		msg = await message.answer(
 			"✨ Ой-ой... Юкі вже стомилась малювати! ✨\n"
@@ -115,7 +117,7 @@ async def generate_image(message: Message):
 			return
 
 		# Анімація "завантаження фото"
-		await message.chat.do("upload_photo")
+		await message.bot.send_chat_action(message.chat.id, "upload_photo")
 
 		# --- Виклик API Gemini ---
 		response = client.models.generate_images(
@@ -172,7 +174,7 @@ async def generate_image(message: Message):
 					logging.warning(f"Не вдалося видалити тимчасовий файл: {e}")
 
 	except TelegramAPIError as e:
-		logging.error(f"Помилка Telegram: {e}")
+		logging.error(f"Помилка Telegram: {e}", exc_info=True)
 		msg = await message.answer("Помилка відправки")
 		await asyncio.sleep(5)
 		await asyncio.gather(
@@ -181,7 +183,7 @@ async def generate_image(message: Message):
 		)
 
 	except Exception as e:
-		logging.error(f"Помилка генерації: {e}")
+		logging.error(f"Помилка генерації: {e}", exc_info=True)
 		msg = await message.answer("Помилка генерації зображення")
 		await asyncio.sleep(5)
 		await asyncio.gather(
