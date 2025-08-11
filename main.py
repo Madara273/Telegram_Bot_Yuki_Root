@@ -19,7 +19,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramNetworkError, RestartingTelegram
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.types import BufferedInputFile, InputMediaPhoto
-from aiogram.enums.parse_mode import ParseMode
+from aiogram.exceptions import TelegramRetryAfter
 
 from magic import magic_router
 from waifu import waifu_router
