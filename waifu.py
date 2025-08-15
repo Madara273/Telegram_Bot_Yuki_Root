@@ -12,7 +12,7 @@ from aiogram import Router, Bot, types
 from aiogram.filters import Command
 from aiogram.types import FSInputFile
 from aiogram.exceptions import TelegramForbiddenError
-from waifupics import waifu_sfw
+from waifupics import waifu_sfw, waifu_nsfw
 import config
 
 logger = logging.getLogger(__name__)
@@ -78,8 +78,9 @@ def get_random_local_waifu(folder: str, user_id: int) -> str | None:
 @waifu_router.message(Command("waifu"))
 async def waifu_cmd(message: types.Message, bot: Bot, is_internal_call: bool = False):
 	user_id = message.from_user.id
-	text = message.text.strip().split(maxsplit=1)
+	text = message.text.strip().split(maxsplit=2)
 	password = text[1] if len(text) > 1 else ""
+	mode = text[2].lower() if len(text) > 2 else "sfw"  # sfw за замовчуванням
 
 	if not is_internal_call:
 		try:
@@ -98,13 +99,18 @@ async def waifu_cmd(message: types.Message, bot: Bot, is_internal_call: bool = F
 	else:
 		if not is_internal_call:
 			try:
-				warn = await message.answer("Введи правильний пароль: `/waifu <пароль>`", parse_mode="MarkdownV2")
+				warn = await message.answer("Введи правильний пароль: `/waifu <пароль> [sfw|nsfw]`", parse_mode="MarkdownV2")
 				await sleep(4)
 				await warn.delete()
 			except Exception as e:
 				logger.warning(f"Не вдалося надіслати повідомлення про неправильний пароль: {e}")
 		else:
 			logger.error(f"Внутрішній виклик waifu_cmd для користувача %d не спрацював через невірний пароль.", user_id)
+		return
+
+	# NSFW тільки у приваті
+	if mode == "nsfw" and message.chat.type != "private":
+		await message.answer("NSFW можна отримувати тільки в приватних повідомленнях 😳")
 		return
 
 	file_path = get_random_local_waifu(WAIFU_FOLDER, user_id)
@@ -115,8 +121,9 @@ async def waifu_cmd(message: types.Message, bot: Bot, is_internal_call: bool = F
 		except Exception as e:
 			logger.error(f"Помилка при надсиланні локального зображення: {e}")
 
+	# --- API SFW/NSFW ---
 	try:
-		url = await waifu_sfw()
+		url = await (waifu_nsfw() if mode == "nsfw" else waifu_sfw())
 		if url:
 			await message.answer(f'<a href="{url}">Дівчина</a>', parse_mode="HTML")
 		else:
